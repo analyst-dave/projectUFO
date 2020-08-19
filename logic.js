@@ -130,6 +130,8 @@ function createSlider() {
       .on("change",  (date) => {
         var newYear = Math.ceil(date.getFullYear() / 1) * 1;
         if (newYear != currentYear) {
+          if (newYear>currentYear+1)
+            newYear = currentYear+1;
           currentYear = newYear;
           if (firstClick) {
             //svg.selectAll("circle").attr("fill-opacity", 0).attr("stroke-opacity", 0);
