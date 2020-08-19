@@ -1,14 +1,33 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <head>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="chroniton.css" rel="stylesheet">
     <link href="slider-tooltip.css" rel="stylesheet">
 </head>
 <body>
 
-  <div id="map"></div>
   <div id="slider"></div>
+  
+  <form id="form" name="form">
+    <div class="btn-group btn-group-toggle btn-group-sm" data-toggle="button" role="group" style="margin-left: 380px; margin-top: 10px;">
+      <label id="label1" class="btn rounded-left btn-light" aria-pressed="true">
+        <input onclick="dataToggle();" class="" aria-pressed="true" type="radio" name="options" id="option1" value="0" autocomplete="off"><b>100+ UFOs</b>
+      </label>
+      <label id="label2" class="btn btn-light" aria-pressed="true">
+        <input onclick="dataToggle();" class="" aria-pressed="true" type="radio" name="options" id="option2" value="1" autocomplete="off"><b>1,000+ UFOs</b>
+      </label>
+      <label id="label3" class="btn rounded-right btn-light" aria-pressed="true">
+        <input onclick="dataToggle();" class="" aria-pressed="true" type="radio" name="options" id="option3" value="2" autocomplete="off"><b>10,000+ UFOs</b>
+      </label>
+    </div>
+  </form>
+  
+  <div id="bar"></div>
 
+  <div id="map"></div>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" type="text/javascript"></script>
   <script src="https://d3js.org/d3.v3.min.js" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.7.1/d3-tip.min.js" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-composite-projections/0.3.5/composite-projections.min.js"></script>
