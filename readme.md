@@ -1,3 +1,4 @@
+# live demo @ http://analyst-dave.github.io/projectUFO
 # Issues/challenges while creating the Map
 Mapping coordinates to the projection w/out Leaflet and Mapbox tile layers
 - we use d3-composite-projections library to get the projection of US map by calling 
@@ -31,12 +32,12 @@ Two concurrency issues we faced
 Getting the slider to work (Chronition.js)
 - we decided to use a JS library called Chronition(by Jason Lawrence) for our slider:
 <code>https://github.com/chroniton</code>
-- getting the slider to work properly was a bit challenging since we have to populate the circles year by year in a chronological order.  So we have to modify our <code>createCicles()</code> code to createCircles by year.  Also after bunch of refactoring, grouping the circles with <g> tags and 
+- getting the slider to work properly was a bit challenging since we have to populate the circles year by year in a chronological order.  So we have to modify our <code>createCicles()</code> code to createCircles by year.  After some refactoring, grouping the circles with g tags and refreshing the tooltip per year, slider is working as expected 
 
 
 Final tweak -- d3 tween transition
-- we utilize the d3.interpolate() to achieve the ease transition in d3 (it's call Tween)
-- we use tweening in circles, bars and the total UFO number
+- we utilize the d3.interpolate() to achieve the ease transition in d3 (it's called "Tween")
+- we use tweening in circles as well as the total UFO number
 
 <code>
 
