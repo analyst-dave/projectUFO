@@ -44,11 +44,8 @@ function drawMap(error, topojsonData, cvsData) {
 
   // change topojsonData.objects.states to topojsonData.objects.districts if using us-congress-113.json instead of us.json
   var us = topojson.feature(topojsonData, topojsonData.objects.states);
-  console.log(us);
-  //console.log(us.features);
 
   ufoData = cvsData;
-  console.log(ufoData);
 
   // begin to draw map
   svg
@@ -104,7 +101,7 @@ function showData() {
   x.domain([0, totalUFO]);
 
   //ufoData.sort((a, b) => a.year - b.year);
-  console.log('inside showData()...', ufoData);
+  //console.log('inside showData()...', ufoData);
 
   var toolTip = createTooltip();
 
@@ -119,7 +116,7 @@ function showData() {
 // -------------------------------------------------------------
 
 function createSlider() {
-  console.log('inside createSlider()...');
+  //console.log('inside createSlider()...');
   d3.select("#slider").call(
     chroniton() // this call the chroniton JS library for the slider player component
       .domain([new Date(startYear, 1, 1), new Date(endYear, 1, 1)])
@@ -130,15 +127,18 @@ function createSlider() {
       .on("change",  (date) => {
         var newYear = Math.ceil(date.getFullYear() / 1) * 1;
         if (newYear != currentYear) {
+
+          // takes care of year skipping due to speed of slider
           if (newYear>currentYear+1)
             newYear = currentYear+1;
+
           currentYear = newYear;
           if (firstClick) {
             //svg.selectAll("circle").attr("fill-opacity", 0).attr("stroke-opacity", 0);
             svg.selectAll("circle").remove();
             firstClick = false;
           }
-          console.log(currentYear);
+          //console.log(currentYear);
           //var toolTip = createTooltip();
           //createCirclesByYear(ufoData, toolTip, currentYear);
           //svg.call(toolTip);
@@ -148,7 +148,7 @@ function createSlider() {
         }
       })
       .playButton(true)
-      .playbackRate(0.2)
+      .playbackRate(0.3)
       .loop(false)
   );
 }
@@ -156,7 +156,7 @@ function createSlider() {
 // -------------------------------------------------------------
 
 function createTooltip() {
-  console.log('inside createTooltip()...');
+  //console.log('inside createTooltip()...');
   // Step 7: Initialize tool tip
   // ==============================
   var toolTip = d3
@@ -188,17 +188,15 @@ function createBar(ufoData) {
   bar.append("rect")
       .attr("x", 225)
       .attr("y", 2)
-      //.attr("y", function(d) { return y(d.letter); })
       .attr("height", 10)
-      .attr("width", 10) //
+      .attr("width", 10)
       .style("fill","purple")
       .style("fill-opacity", 0.1);
 
   bar.append("text")
       .attr("x", 225)
       .attr("y", 11)
-      //.style("font-size", 20)
-      .text(0); //
+      .text(0); 
 
   bar.selectAll("rect")
   .transition()
@@ -224,7 +222,7 @@ function createCircles(ufoData, toolTip) {
   // need to scale down circle size if more than threshold
   var circleScalar = (totalUFO > threshold) ? 0.04 : 0.1;
   var opacityScalar = (totalUFO > threshold) ? 0.2 : 0.4;
-  console.log('inside createCircles()...', circleScalar, opacityScalar);
+  //console.log('inside createCircles()...', circleScalar, opacityScalar);
   var circles = svg.append("g") 
         .selectAll("circle")
         .data(ufoData)  // import data for ALL year
@@ -256,14 +254,14 @@ function createCircles(ufoData, toolTip) {
         .style("stroke", "purple")
         .style("stroke-opacity", opacityScalar);
 
-  console.log(circles);
+  //console.log(circles);
 }
 
 // -------------------------------------------------------------
 
 function dataToggle() {
   var val = getRadioVal(document.getElementById('form'), 'options');
-  console.log(val);
+  //console.log(val);
   currentDataset = dataset[val];
 
   const hiddenField = document.createElement('input');
@@ -319,7 +317,7 @@ function updateOptionButtons(option) {
     document.getElementById("option1").checked = false;
     document.getElementById("option2").checked = true;
     document.getElementById("option3").checked = false;
-    console.log("### Default option used!!! ###");
+    //console.log("### Default option used!!! ###");
   } 
 }
 
@@ -340,14 +338,6 @@ function getRadioVal(form, name) {
   return val; // return value of checked radio or undefined if none checked
 }
 
-function check(name) {
-  document.getElementById(name).checked = true;
-}
-
-function uncheck(name) {
-  document.getElementById(name).checked = false;
-}
-
 function getParameterByName(name, url) {
   if (!url) url = window.location.href;
   name = name.replace(/[\[\]]/g, '\\$&');
@@ -363,7 +353,7 @@ function getParameterByName(name, url) {
 /*
 function createCirclesByYear(ufoData, toolTip, year) {
   var currentYearData = ufoData.filter(d => +d.year === year);
-  console.log('inside createCirclesByYear('+year+')...', currentYearData);
+  //console.log('inside createCirclesByYear('+year+')...', currentYearData);
 
   var circleGroup = svg.append("g") 
         .selectAll("circle")
@@ -491,7 +481,7 @@ function createCirclesByYear2(ufoData, toolTip, year) {
         .attr("stroke", "purple")
         .attr("stroke-opacity", 0.2);
       //.text(d => d.duration*0.0001);
-  console.log(circles)
+  //console.log(circles)
   return circles;
 }
 
@@ -524,9 +514,9 @@ function createCirclesByYear3(ufoData, toolTip, year) {
         .ease("linear")
         .duration(1000)
         .attr("r", (d) => {
-          console.log("##-----------------------------##");
-          console.log("duration: " + d.duration + " seconds");
-          console.log("r = " + d.duration / 60 * 0.2 + " seconds");
+          //console.log("##-----------------------------##");
+          //console.log("duration: " + d.duration + " seconds");
+          //console.log("r = " + d.duration / 60 * 0.2 + " seconds");
           return (d.duration>21600) ? 21600 : (d.duration / 60 * 0.2)+1;
         })
         .attr("fill", "purple")
@@ -534,7 +524,7 @@ function createCirclesByYear3(ufoData, toolTip, year) {
         .attr("stroke", "purple")
         .attr("stroke-opacity", 0.2);
       //.text(d => d.duration*0.0001);
-  console.log(circles)
+  //console.log(circles)
   return circles;
 }
 */
