@@ -1,4 +1,4 @@
-var startYear = 1910;//1910;
+var startYear = 1940;//1920;
 var endYear = 2015;//2015;
 var currentYear = startYear;
 var width = 1400;//975;
@@ -7,7 +7,7 @@ var height = 800;//610;
 ///////////////////////////////////////////////////
 // this is d3.geo.mercator() or d3.geo.albers() equavilent
 //var projection = d3.geoAlbersUsa().scale(1300).translate([500, 300]); // for D3 v4
-var projection = d3.geo.albersUsa().scale(1400).translate([580, 320]); // for D3 v3 left-right, up-down 
+var projection = d3.geo.albersUsa().scale(1300).translate([580, 320]); // for D3 v3 left-right, up-down 
 // projection path for "d" element to be passed to D3
 var path = d3.geo.path().projection(projection); // for D3 v3
 //var path = d3.geoPath().projection(projection); // for D3 v4
@@ -26,6 +26,11 @@ var currentDataset = dataset[option];  // default is option 1 -> 1680 ufo record
 option = getParameterByName('options') ? getParameterByName('options') : currentDataset;
 currentDataset = getParameterByName('currentDataset') ? getParameterByName('currentDataset') : currentDataset;
 updateOptionButtons(option);
+
+if (option > 1)
+  currentYear = startYear = 1920;
+else if (option == 0)
+  currentYear = startYear = 1960;
 
 var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
 var formatPercent = d3.format(",.0f");
@@ -148,7 +153,7 @@ function createSlider() {
         }
       })
       .playButton(true)
-      .playbackRate(0.3)
+      .playbackRate((option>1) ? 0.2 : 0.8)
       .loop(false)
   );
 }
@@ -277,46 +282,72 @@ function dataToggle() {
 // -------------------------------------------------------------
 
 function updateOptionButtons(option) {
-  if (option == 0) { 
-    $('#option1').addClass('active');
+
+  if (option == 3) {
+    $('#option1').removeClass('active');
     $('#option2').removeClass('active');
     $('#option3').removeClass('active');
-    $('#label1').addClass('active');
+    $('#option4').addClass('active');
+    $('#label1').removeClass('active');
     $('#label2').removeClass('active');
     $('#label3').removeClass('active');
-    document.getElementById("option1").checked = true;
+    $('#label4').addClass('active');
+    document.getElementById("option1").checked = false;
     document.getElementById("option2").checked = false;
     document.getElementById("option3").checked = false;
-  } else if ( option == 1 ) { 
-    $('#option1').removeClass('active');
-    $('#option2').addClass('active');
-    $('#option3').removeClass('active');
-    $('#label1').removeClass('active');
-    $('#label2').addClass('active');
-    $('#label3').removeClass('active');
-    document.getElementById("option1").checked = false;
-    document.getElementById("option2").checked = true;
-    document.getElementById("option3").checked = false;
+    document.getElementById("option4").checked = true;
   } else if ( option == 2 ) { 
     $('#option1').removeClass('active');
     $('#option2').removeClass('active');
     $('#option3').addClass('active');
+    $('#option4').removeClass('active');
     $('#label1').removeClass('active');
     $('#label2').removeClass('active');
     $('#label3').addClass('active');
+    $('#label4').removeClass('active');
     document.getElementById("option1").checked = false;
     document.getElementById("option2").checked = false;
     document.getElementById("option3").checked = true;
+    document.getElementById("option4").checked = false;
+  } else if ( option == 1 ) { 
+    $('#option1').removeClass('active');
+    $('#option2').addClass('active');
+    $('#option3').removeClass('active');
+    $('#option4').removeClass('active');
+    $('#label1').removeClass('active');
+    $('#label2').addClass('active');
+    $('#label3').removeClass('active');
+    $('#label4').removeClass('active');
+    document.getElementById("option1").checked = false;
+    document.getElementById("option2").checked = true;
+    document.getElementById("option3").checked = false;
+    document.getElementById("option4").checked = false;
+  } else if (option == 0) { 
+    $('#option1').addClass('active');
+    $('#option2').removeClass('active');
+    $('#option3').removeClass('active');
+    $('#option4').removeClass('active');
+    $('#label1').addClass('active');
+    $('#label2').removeClass('active');
+    $('#label3').removeClass('active');
+    $('#label4').removeClass('active');
+    document.getElementById("option1").checked = true;
+    document.getElementById("option2").checked = false;
+    document.getElementById("option3").checked = false;
+    document.getElementById("option4").checked = false;
   } else {
     $('#option1').removeClass('active');
     $('#option2').addClass('active');
     $('#option3').removeClass('active');
+    $('#option4').removeClass('active');
     $('#label1').removeClass('active');
     $('#label2').addClass('active');
     $('#label3').removeClass('active');
+    $('#label4').removeClass('active');
     document.getElementById("option1").checked = false;
     document.getElementById("option2").checked = true;
     document.getElementById("option3").checked = false;
+    document.getElementById("option4").checked = false;
     //console.log("### Default option used!!! ###");
   } 
 }
