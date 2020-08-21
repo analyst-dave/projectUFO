@@ -23,12 +23,12 @@ var option = 1;
 var currentDataset = dataset[option];  // default is option 1 -> 1680 ufo records
 
 // read param from request and update options, button labels, and dataset used
-option = getParameterByName('options') ? getParameterByName('options') : currentDataset;
+option = getParameterByName('options') ? getParameterByName('options') : option;
 currentDataset = getParameterByName('currentDataset') ? getParameterByName('currentDataset') : currentDataset;
 updateOptionButtons(option);
 
 if (option > 1)
-  currentYear = startYear = 1920;
+  currentYear = startYear = 1930;
 else if (option == 0)
   currentYear = startYear = 1960;
 
@@ -82,7 +82,7 @@ function drawMap(error, topojsonData, cvsData) {
 
   showData();
 
-  createSlider();
+  
 }
 
 // -------------------------------------------------------------
@@ -108,14 +108,15 @@ function showData() {
   //ufoData.sort((a, b) => a.year - b.year);
   //console.log('inside showData()...', ufoData);
 
-  var toolTip = createTooltip();
-
-  createCircles(ufoData, toolTip);
+  //var toolTip = createTooltip();
+  //createCircles(ufoData, toolTip);
+  //svg.call(toolTip);
   //createCirclesByYear(ufoData, toolTip, 2005);
 
-  createBar(ufoData);
+  
+  createSlider();
 
-  svg.call(toolTip);
+  createBar(ufoData);
 }
 
 // -------------------------------------------------------------
@@ -133,28 +134,40 @@ function createSlider() {
         var newYear = Math.ceil(date.getFullYear() / 1) * 1;
         if (newYear != currentYear) {
 
-          // takes care of year skipping due to speed of slider
-          if (newYear>currentYear+1)
-            newYear = currentYear+1;
-
-          currentYear = newYear;
-          if (firstClick) {
-            //svg.selectAll("circle").attr("fill-opacity", 0).attr("stroke-opacity", 0);
-            svg.selectAll("circle").remove();
-            firstClick = false;
-          }
-          //console.log(currentYear);
-          //var toolTip = createTooltip();
-          //createCirclesByYear(ufoData, toolTip, currentYear);
-          //svg.call(toolTip);
           var toolTip = createTooltip();
-          createCircles(ufoData.filter(d => d.year == currentYear), toolTip);
+
+          // either play or skip
+          if (firstClick) {
+            console.log("1st click", newYear);
+            svg.selectAll("circle").remove();
+            createCircles(ufoData.filter(d => d.year < newYear), toolTip);
+            firstClick = false;
+          // takes care of year skipping/rewind/loop or due to speed of slider
+          } else if (newYear > currentYear+1) {
+            console.log("forward/lagging... playback backdated! (performance reason)");
+            // since slider is playing we don't need to remove and re-create
+            // we just need to simply backdate the new year 
+            newYear = currentYear + 1; 
+          } else if (newYear < currentYear) {
+            console.log(">> rewinding ");
+            svg.selectAll("circle").remove();
+            createCircles(ufoData.filter(d => d.year < newYear), toolTip);
+          } 
+          currentYear = newYear;
+          console.log(currentYear);
+
+          var currentYearData = ufoData.filter(d => d.year == currentYear);
+          createCircles(currentYearData, toolTip);
+          //createCirclesByYear(ufoData, toolTip, currentYear);
+
+          //createBar(currentYearData);
           svg.call(toolTip);
         }
       })
       .playButton(true)
       .playbackRate((option>1) ? 0.2 : 0.8)
       .loop(false)
+      .play()
   );
 }
 
@@ -184,6 +197,44 @@ function createTooltip() {
 
 // -------------------------------------------------------------
 
+function createBar(ufoData) {
+  var bar = svg.selectAll("bar")
+                .data([totalUFO])
+                .enter();
+
+  bar.append("rect")
+      .attr("x", 225)
+      .attr("y", 1)
+      .attr("height", 15)
+      .attr("width", 0)
+      .style("fill","purple")
+      .style("fill-opacity", 0.5)
+      .transition()
+      .ease((option<2) ? "cubic-in" : "exp-in")
+      .duration((option<2) ? 6800 : 28000)
+      .delay(0)
+      //.attr("width", x(totalUFO)-840);
+      .attr("width", function(d) { return x(d)-841; });
+
+  bar.append("text")
+      .attr("x", 225)
+      .attr("y", 14)
+      .text(0)
+      //.text(function(d) { return d; });
+      .transition()
+      .ease((option<2) ? "cubic-in" : "exp-in")
+      .duration((option<2) ? 6800 : 28000)
+      .delay(0)
+      .attr("x", function(d) { return x(d)-615; })
+      .tween("text", function(d) {
+        var i = d3.interpolate(0, d);
+        return function(t) {
+          d3.select(this).text(formatPercent(i(t)) + " total UFOs");
+      };});
+}
+
+// -------------------------------------------------------------
+/*
 function createBar(ufoData) {
   var bar = svg.selectAll("#bar")
       .data(ufoData)
@@ -220,7 +271,7 @@ function createBar(ufoData) {
       //return i;
     });
 }
-
+*/
 // -------------------------------------------------------------
 
 function createCircles(ufoData, toolTip) {
@@ -282,68 +333,68 @@ function dataToggle() {
 // -------------------------------------------------------------
 
 function updateOptionButtons(option) {
-
+  
   if (option == 3) {
-    $('#option1').removeClass('active');
-    $('#option2').removeClass('active');
-    $('#option3').removeClass('active');
-    $('#option4').addClass('active');
-    $('#label1').removeClass('active');
-    $('#label2').removeClass('active');
-    $('#label3').removeClass('active');
-    $('#label4').addClass('active');
+    document.getElementById("option1").classList.remove("active");
+    document.getElementById("option2").classList.remove("active");
+    document.getElementById("option3").classList.remove("active");
+    document.getElementById("option4").classList.add("active");
+    document.getElementById("label1").classList.remove("active");
+    document.getElementById("label2").classList.remove("active");
+    document.getElementById("label3").classList.remove("active");
+    document.getElementById("label4").classList.add("active");
     document.getElementById("option1").checked = false;
     document.getElementById("option2").checked = false;
     document.getElementById("option3").checked = false;
     document.getElementById("option4").checked = true;
   } else if ( option == 2 ) { 
-    $('#option1').removeClass('active');
-    $('#option2').removeClass('active');
-    $('#option3').addClass('active');
-    $('#option4').removeClass('active');
-    $('#label1').removeClass('active');
-    $('#label2').removeClass('active');
-    $('#label3').addClass('active');
-    $('#label4').removeClass('active');
+    document.getElementById("option1").classList.remove("active");
+    document.getElementById("option2").classList.remove("active");
+    document.getElementById("option3").classList.add("active");
+    document.getElementById("option4").classList.remove("active");
+    document.getElementById("label1").classList.remove("active");
+    document.getElementById("label2").classList.remove("active");
+    document.getElementById("label3").classList.add("active");
+    document.getElementById("label4").classList.remove("active");
     document.getElementById("option1").checked = false;
     document.getElementById("option2").checked = false;
     document.getElementById("option3").checked = true;
     document.getElementById("option4").checked = false;
   } else if ( option == 1 ) { 
-    $('#option1').removeClass('active');
-    $('#option2').addClass('active');
-    $('#option3').removeClass('active');
-    $('#option4').removeClass('active');
-    $('#label1').removeClass('active');
-    $('#label2').addClass('active');
-    $('#label3').removeClass('active');
-    $('#label4').removeClass('active');
+    document.getElementById("option1").classList.remove("active");
+    document.getElementById("option2").classList.add("active");
+    document.getElementById("option3").classList.remove("active");
+    document.getElementById("option4").classList.remove("active");
+    document.getElementById("label1").classList.remove("active");
+    document.getElementById("label2").classList.add("active");
+    document.getElementById("label3").classList.remove("active");
+    document.getElementById("label4").classList.remove("active");
     document.getElementById("option1").checked = false;
     document.getElementById("option2").checked = true;
     document.getElementById("option3").checked = false;
     document.getElementById("option4").checked = false;
-  } else if (option == 0) { 
-    $('#option1').addClass('active');
-    $('#option2').removeClass('active');
-    $('#option3').removeClass('active');
-    $('#option4').removeClass('active');
-    $('#label1').addClass('active');
-    $('#label2').removeClass('active');
-    $('#label3').removeClass('active');
-    $('#label4').removeClass('active');
+  } else if (option == 0) {
+    document.getElementById("option1").classList.add("active");
+    document.getElementById("option2").classList.remove("active");
+    document.getElementById("option3").classList.remove("active");
+    document.getElementById("option4").classList.remove("active");
+    document.getElementById("label1").classList.add("active");
+    document.getElementById("label2").classList.remove("active");
+    document.getElementById("label3").classList.remove("active");
+    document.getElementById("label4").classList.remove("active"); 
     document.getElementById("option1").checked = true;
     document.getElementById("option2").checked = false;
     document.getElementById("option3").checked = false;
     document.getElementById("option4").checked = false;
   } else {
-    $('#option1').removeClass('active');
-    $('#option2').addClass('active');
-    $('#option3').removeClass('active');
-    $('#option4').removeClass('active');
-    $('#label1').removeClass('active');
-    $('#label2').addClass('active');
-    $('#label3').removeClass('active');
-    $('#label4').removeClass('active');
+    document.getElementById("option1").classList.remove("active");
+    document.getElementById("option2").classList.add("active");
+    document.getElementById("option3").classList.remove("active");
+    document.getElementById("option4").classList.remove("active");
+    document.getElementById("label1").classList.remove("active");
+    document.getElementById("label2").classList.add("active");
+    document.getElementById("label3").classList.remove("active");
+    document.getElementById("label4").classList.remove("active");
     document.getElementById("option1").checked = false;
     document.getElementById("option2").checked = true;
     document.getElementById("option3").checked = false;
