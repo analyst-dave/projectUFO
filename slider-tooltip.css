@@ -108,6 +108,15 @@ h2{
  width: 1000px;
 }
 
+.d3-tip {
+   line-height: 1;
+   padding: 12px;
+   font-size: 12px;
+   background: rgba(43,43,43, 0.8);
+   color: #fff;
+   border-radius: 20px;
+ }
+
 /*
 #slider {
     position: fixed;

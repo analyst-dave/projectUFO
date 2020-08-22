@@ -1,46 +1,82 @@
-var startYear = 1940;//1920;
-var endYear = 2015;//2015;
-var currentYear = startYear;
-var width = 1400;//975;
-var height = 800;//610;
-
 ///////////////////////////////////////////////////
+//
+const width = 1000;//975;
+const height = 600;//610;
+const formatPercent = d3.format(",.0f");
+const r = d3.scale.linear().range([0, 20]).domain([0, 450]).clamp(true);
+const x = d3.scale.linear().range([0, width+143]);
+const y = d3.scale.ordinal().rangeRoundBands([height, 0], .3, .3);
+const color = d3.scale.quantize().range(["#CFD8DC", "#B0BEC5", "#90A4AE", "#607D8B"]);
+const dataset = ["us168ufoData.csv", "us1680ufoData.csv", "us16800ufoDataRandomSamples.csv", "us60800ufoData.csv"];
 // this is d3.geo.mercator() or d3.geo.albers() equavilent
 //var projection = d3.geoAlbersUsa().scale(1300).translate([500, 300]); // for D3 v4
-var projection = d3.geo.albersUsa().scale(1300).translate([580, 320]); // for D3 v3 left-right, up-down 
-// projection path for "d" element to be passed to D3
-var path = d3.geo.path().projection(projection); // for D3 v3
+const projection = d3.geo.albersUsa().scale(1200).translate([480, 280]); // for D3 v3 left-right, up-down 
+const path = d3.geo.path().projection(projection); // for D3 v3
 //var path = d3.geoPath().projection(projection); // for D3 v4
+//
 ///////////////////////////////////////////////////
 
 var ufoData;
-var totalUFO = 0;
-var threshold = 5000;  // default threshold for circle size scaling
 var firstClick = true;
-
-const dataset = ["us168ufoData.csv", "us1680ufoData.csv", "us16800ufoDataRandomSamples.csv", "us60800ufoData.csv"];
 var option = 1;
 var currentDataset = dataset[option];  // default is option 1 -> 1680 ufo records
-
 // read param from request and update options, button labels, and dataset used
 option = getParameterByName('options') ? getParameterByName('options') : option;
 currentDataset = getParameterByName('currentDataset') ? getParameterByName('currentDataset') : currentDataset;
 updateOptionButtons(option);
 
+var startYear = 1940;//1920;
+var endYear = 2015;//2015;
+var currentYear = startYear;
 if (option > 1)
   currentYear = startYear = 1930;
 else if (option == 0)
   currentYear = startYear = 1960;
 
 var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
-var formatPercent = d3.format(",.0f");
-var x = d3.scale.linear().range([0, width]);
-var y = d3.scale.ordinal().rangeRoundBands([height, 0], .3, .3);
 
 d3.queue()
-    .defer(d3.json,"us.json")
+    //.defer(d3.json,"states-albers-10m.json")
+    .defer(d3.json,"states-10m.json")
     .defer(d3.csv, currentDataset)
     .await(drawMap);
+
+// -------------------------------------------------------------
+
+function pupulateChoropleth(us) {
+  var stateCountMap = {};
+  var maxCount = 1;
+  ufoData.forEach((data) => {
+    var key = stateMap[data.state.toUpperCase()];
+    if ( stateCountMap[key] ) {
+      if ( stateCountMap[key] > maxCount )
+        maxCount = stateCountMap[key];
+        stateCountMap[key] = stateCountMap[key] + 1;
+    } else {
+      stateCountMap[key] = 1;
+    }
+  });
+  // choropleth color quantize range of possible values
+  color.domain([0, maxCount]);
+
+  //Merge the ag. data and GeoJSON
+  for (var key in stateCountMap) {
+    var dataState = key;
+    //Grab data value, and convert from string to float
+    var dataValue = parseInt(stateCountMap[key]);
+    //Find the corresponding state inside the GeoJSON
+    for (var j = 0; j < us.features.length; j++) {
+      var jsonState = us.features[j].properties.name;
+      //console.log("jsonState = ", jsonState);
+      if (dataState == jsonState) {
+          //Copy the data value into the JSON
+          us.features[j].properties.value = +dataValue;
+          break;
+      }
+    }
+  }
+  return us;
+}
 
 // -------------------------------------------------------------
 
@@ -49,8 +85,22 @@ function drawMap(error, topojsonData, cvsData) {
 
   // change topojsonData.objects.states to topojsonData.objects.districts if using us-congress-113.json instead of us.json
   var us = topojson.feature(topojsonData, topojsonData.objects.states);
-
+  //console.log(stateMap);
   ufoData = cvsData;
+
+  us = pupulateChoropleth(us);
+
+  // prepare the tooltip to be used during draw map
+  var stateTip = d3.tip()
+                    .attr('class', 'd3-tip')
+                    .offset([0, 0])
+                    .html(function(d) {
+                    var dataRow = d.properties.name;
+                    if (d.properties.name && d.properties.value)
+                      return dataRow + ": " + d.properties.value + " ufo sighting(s)";
+                    else
+                      return d.properties.name + ": no record";});
+  svg.call(stateTip);
 
   // begin to draw map
   svg
@@ -58,13 +108,18 @@ function drawMap(error, topojsonData, cvsData) {
     .data(us.features)
     .enter()
     .append("path")
-    // the actual projection path
-    .attr("d", path)
+    .attr("d", path) // the actual projection path
     .attr("class", "region")
     .style("opacity", ".8")
-    .style("fill", "slategrey")
+    .on('mouseover', stateTip.show)
+    .on('mouseout', stateTip.hide)
+    .style("fill", (d) => {
+      var value = d.properties.value;
+      return (value) ? color(value) : "#efefef";
+    }) 
     .style("stroke", "white")
-    .style("stroke-width", "0.5px")
+    .style("stroke-width", "0.5px");
+    /*
     .on("mouseover", function (d, i) {
       d3.select(this).transition().duration(500).style("fill", "#808080");
     })
@@ -72,48 +127,45 @@ function drawMap(error, topojsonData, cvsData) {
       //d3.select(this).interrupt();
       d3.select(this).transition().duration(2000).style("fill", "slategrey");
     });
+    */
 
   // this is the map composition borders for Alaska(02) & Hawaii(15)
   svg
     .append("path")
     .style("fill", "none")
-    .style("stroke", "black")
+    .style("stroke", "#efefef")
     .attr("d", projection.getCompositionBorders());
 
-  showData();
+  // this is the legend for choropleth of state's total sightings 
+  var legendLinear = d3.legend.color()
+    .labelFormat(d3.format(".2s"))
+    .shapeWidth(20)
+    .orient('vertical')
+    .scale(color);
+  svg.append("g").attr("class", "legend").attr("transform", "translate(680,20)");
+  svg.selectAll(".legend").call(legendLinear);
 
-  
+  showData();
 }
 
 // -------------------------------------------------------------
 
 function showData() {
-  
   //var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S"); // for D3 v4
-  var parseDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse; // for D3 v3
-
+  //var parseDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse; // for D3 v3
   ufoData.forEach((data) => {
     data.lng = +data.lng;
     data.lat = +data.lat;
     data.duration = +data.duration;
-    data.date = parseDate(data.date);
+    //data.date = parseDate(data.date);
+    data.date = data.date;
     data.year = +data.year;
     data.month = +data.month;
     data.day = +data.day;
-    totalUFO++;
   });
-
-  x.domain([0, totalUFO]);
-
   //ufoData.sort((a, b) => a.year - b.year);
-  //console.log('inside showData()...', ufoData);
+  x.domain([0, ufoData.length]);
 
-  //var toolTip = createTooltip();
-  //createCircles(ufoData, toolTip);
-  //svg.call(toolTip);
-  //createCirclesByYear(ufoData, toolTip, 2005);
-
-  
   createSlider();
 
   createBar(ufoData);
@@ -133,9 +185,7 @@ function createSlider() {
       .on("change",  (date) => {
         var newYear = Math.ceil(date.getFullYear() / 1) * 1;
         if (newYear != currentYear) {
-
           var toolTip = createTooltip();
-
           // either play or skip
           if (firstClick) {
             console.log("1st click", newYear);
@@ -144,7 +194,7 @@ function createSlider() {
             firstClick = false;
           // takes care of year skipping/rewind/loop or due to speed of slider
           } else if (newYear > currentYear+1) {
-            console.log("forward/lagging... playback backdated! (performance reason)");
+            console.log("forward/lagging... playback backdated! (performance enhancement)");
             // since slider is playing we don't need to remove and re-create
             // we just need to simply backdate the new year 
             newYear = currentYear + 1; 
@@ -154,12 +204,11 @@ function createSlider() {
             createCircles(ufoData.filter(d => d.year < newYear), toolTip);
           } 
           currentYear = newYear;
-          console.log(currentYear);
+          //console.log(currentYear);
 
           var currentYearData = ufoData.filter(d => d.year == currentYear);
           createCircles(currentYearData, toolTip);
           //createCirclesByYear(ufoData, toolTip, currentYear);
-
           //createBar(currentYearData);
           svg.call(toolTip);
         }
@@ -199,12 +248,12 @@ function createTooltip() {
 
 function createBar(ufoData) {
   var bar = svg.selectAll("bar")
-                .data([totalUFO])
+                .data([ufoData.length])
                 .enter();
 
   bar.append("rect")
       .attr("x", 225)
-      .attr("y", 1)
+      .attr("y", 0)
       .attr("height", 15)
       .attr("width", 0)
       .style("fill","purple")
@@ -234,51 +283,12 @@ function createBar(ufoData) {
 }
 
 // -------------------------------------------------------------
-/*
-function createBar(ufoData) {
-  var bar = svg.selectAll("#bar")
-      .data(ufoData)
-    .enter().append("g")
-      .attr("class", "bar");
-
-  bar.append("rect")
-      .attr("x", 225)
-      .attr("y", 2)
-      .attr("height", 10)
-      .attr("width", 10)
-      .style("fill","purple")
-      .style("fill-opacity", 0.1);
-
-  bar.append("text")
-      .attr("x", 225)
-      .attr("y", 11)
-      .text(0); 
-
-  bar.selectAll("rect")
-  .transition()
-  .ease("linear")
-  .duration(2000)
-  .delay(0)
-  .attr("width", x(totalUFO)-840);
-
-  bar.selectAll("text").transition().ease("linear").duration(2000).delay(0)
-    .attr("x", function(d) { return x(totalUFO)-600; })
-    .tween("text", function(d) {
-      var i = d3.interpolate(0, totalUFO);
-      return function(t) {
-        d3.select(this).text(formatPercent(i(t)));
-      };
-      //return i;
-    });
-}
-*/
-// -------------------------------------------------------------
 
 function createCircles(ufoData, toolTip) {
-  // need to scale down circle size if more than threshold
-  var circleScalar = (totalUFO > threshold) ? 0.04 : 0.1;
-  var opacityScalar = (totalUFO > threshold) ? 0.2 : 0.4;
-  //console.log('inside createCircles()...', circleScalar, opacityScalar);
+  // all scalars are at the top of this file... below are 
+  // special cases to handle different datasets
+  var opacityScalar = (option<2) ? 0.4 : 0.2;
+  var circleScalar = (option>2) ? 0.1 : 1; 
   var circles = svg.append("g") 
         .selectAll("circle")
         .data(ufoData)  // import data for ALL year
@@ -302,15 +312,13 @@ function createCircles(ufoData, toolTip) {
         .ease("linear")
         .duration(1000)
         .attrTween("r", (d) => {
-          
-          return d3.interpolateNumber(1, (d.duration<1) ? 1 : (d.duration/60 * circleScalar)+1);
+          //return d3.interpolateNumber(1, (d.duration<1) ? 1 : r(d.duration/60 * circleScalar)+1);
+          return d3.interpolateNumber(1, (d.duration<1) ? 1 : r(d.duration/60 * circleScalar)+1);
         })
         .style("fill", "purple")
         .style("fill-opacity", opacityScalar)
         .style("stroke", "purple")
         .style("stroke-opacity", opacityScalar);
-
-  //console.log(circles);
 }
 
 // -------------------------------------------------------------
